@@ -1,4 +1,4 @@
-![alt tag](https://raw.github.com/trusttoken/trueUSD/readMe/Logo.png)
+![alt tag](https://raw.github.com/trusttoken/trueUSD/Logo.png)
 
 
 # TrueUSD
@@ -47,8 +47,10 @@ This is the top-level ERC20 contract tying together all the previously mentioned
 
 ### TimeLockedController.sol
 
-This contract is the initial owner of TrueUSD.sol. It splits ownership into 'owner' and 'admin'
-for extra security.
+This contract is the initial owner of TrueUSD.sol. Carry out all administrative functions for TrueUSD (minting, setting fees, delegating etc). Contains logic for access control for different type of admins for extra security.
+
+### MultiSigOwner.sol
+Owner of TimeLockedController contract. can call all onlyOwner functions in TimeLockedController. Requires 2 out of three signatures for any action.
 
 
 ### Delegation process
