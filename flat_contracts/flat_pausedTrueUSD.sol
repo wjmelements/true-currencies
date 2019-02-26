@@ -422,6 +422,9 @@ contract ProxyStorage {
     uint[] public gasRefundPool;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
+
+    mapping (address => uint256) public balanceOf;
+    mapping (address => mapping (address => uint256)) public allowance;
 }
 
 // File: contracts/HasOwner.sol
@@ -493,14 +496,6 @@ contract PausedToken is HasOwner {
         return totalSupply_;
     }
 
-    function balanceOf(address _owner) public view returns (uint256 balance) {
-        return balances.balanceOf(_owner);
-    }
-
-    function allowance(address _owner, address _spender) public view returns (uint256) {
-        return allowances.allowanceOf(_owner, _spender);
-    }
-
     function setAllowanceSheet(address _sheet) public onlyOwner returns(bool) {
         allowances = AllowanceSheet(_sheet);
         allowances.claimOwnership();
@@ -564,7 +559,7 @@ contract PausedDelegateERC20 is PausedToken {
     }
 
     function delegateBalanceOf(address who) public view returns (uint256) {
-        return balanceOf(who);
+        return balanceOf[who];
     }
 
     function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
@@ -572,7 +567,7 @@ contract PausedDelegateERC20 is PausedToken {
     }
 
     function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return allowance(owner, spender);
+        return allowance[owner][spender];
     }
 
     function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
@@ -655,7 +650,7 @@ contract PausedTrueUSD is PausedDelegateERC20 {
 
     function wipeBlacklistedAccount(address _account) public onlyOwner {
         require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");
-        uint256 oldValue = balanceOf(_account);
+        uint256 oldValue = balanceOf[_account];
         balances.setBalance(_account, 0);
         totalSupply_ = totalSupply_.sub(oldValue);
         emit WipeBlacklistedAccount(_account, oldValue);

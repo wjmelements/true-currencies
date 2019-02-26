@@ -422,6 +422,9 @@ contract ProxyStorage {
     uint[] public gasRefundPool;
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
+
+    mapping (address => uint256) public balanceOf;
+    mapping (address => mapping (address => uint256)) public allowance;
 }
 
 // File: contracts/HasOwner.sol
@@ -513,15 +516,6 @@ contract ModularBasicToken is HasOwner {
     function totalSupply() public view returns (uint256) {
         return totalSupply_;
     }
-
-    /**
-    * @dev Gets the balance of the specified address.
-    * @param _owner The address to query the the balance of.
-    * @return An uint256 representing the amount owned by the passed address.
-    */
-    function balanceOf(address _owner) public view returns (uint256 balance) {
-        return balances.balanceOf(_owner);
-    }
 }
 
 // File: contracts/modularERC20/ModularStandardToken.sol
@@ -534,6 +528,7 @@ contract ModularBasicToken is HasOwner {
  * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
 contract ModularStandardToken is ModularBasicToken {
+    using SafeMath for uint256;
     
     event AllowanceSheetSet(address indexed sheet);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -565,18 +560,8 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _approveAllArgs(address _spender, uint256 _value, address _tokenHolder) internal {
-        allowances.setAllowance(_tokenHolder, _spender, _value);
+        allowance[_tokenHolder][_spender] = _value;
         emit Approval(_tokenHolder, _spender, _value);
-    }
-
-    /**
-     * @dev Function to check the amount of tokens that an owner allowed to a spender.
-     * @param _owner address The address which owns the funds.
-     * @param _spender address The address which will spend the funds.
-     * @return A uint256 specifying the amount of tokens still available for the spender.
-     */
-    function allowance(address _owner, address _spender) public view returns (uint256) {
-        return allowances.allowanceOf(_owner, _spender);
     }
 
     /**
@@ -595,8 +580,8 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _increaseApprovalAllArgs(address _spender, uint256 _addedValue, address _tokenHolder) internal {
-        allowances.addAllowance(_tokenHolder, _spender, _addedValue);
-        emit Approval(_tokenHolder, _spender, allowances.allowanceOf(_tokenHolder, _spender));
+        allowance[_tokenHolder][_spender] = allowance[_tokenHolder][_spender].add(_addedValue);
+        emit Approval(_tokenHolder, _spender, allowance[_tokenHolder][_spender]);
     }
 
     /**
@@ -615,13 +600,15 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _decreaseApprovalAllArgs(address _spender, uint256 _subtractedValue, address _tokenHolder) internal {
-        uint256 oldValue = allowances.allowanceOf(_tokenHolder, _spender);
+        uint256 oldValue = allowance[_tokenHolder][_spender];
+        uint256 newValue;
         if (_subtractedValue > oldValue) {
-            allowances.setAllowance(_tokenHolder, _spender, 0);
+            newValue = 0;
         } else {
-            allowances.subAllowance(_tokenHolder, _spender, _subtractedValue);
+            newValue = oldValue - _subtractedValue;
         }
-        emit Approval(_tokenHolder,_spender, allowances.allowanceOf(_tokenHolder, _spender));
+        allowance[_tokenHolder][_spender] = newValue;
+        emit Approval(_tokenHolder,_spender, newValue);
     }
 }
 
@@ -647,7 +634,7 @@ contract ModularBurnableToken is ModularStandardToken {
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
         /* uint burnAmount = _value / (10 **16) * (10 **16); */
-        balances.subBalance(_burner, _value);
+        balanceOf[_burner] = balanceOf[_burner].sub(_value);
         totalSupply_ = totalSupply_.sub(_value);
         emit Burn(_burner, _value);
         emit Transfer(_burner, address(0), _value);
@@ -720,8 +707,8 @@ contract CompliantToken is ModularBurnableToken {
     // Destroy the tokens owned by a blacklisted account
     function wipeBlacklistedAccount(address _account) public onlyOwner {
         require(registry.hasAttribute(_account, IS_BLACKLISTED), "_account is not blacklisted");
-        uint256 oldValue = balanceOf(_account);
-        balances.setBalance(_account, 0);
+        uint256 oldValue = balanceOf[_account];
+        balanceOf[_account] = 0;
         totalSupply_ = totalSupply_.sub(oldValue);
         emit WipeBlacklistedAccount(_account, oldValue);
         emit Transfer(_account, address(0), oldValue);
@@ -766,9 +753,9 @@ contract CompliantDepositTokenWithHook is CompliantToken {
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = registry.requireCanTransferFrom(_sender, _from, _to);
-        allowances.subAllowance(_from, _sender, _value);
-        balances.subBalance(_from, _value);
-        balances.addBalance(_to, _value);
+        allowance[_from][_sender] = allowance[_from][_sender].sub(_value);
+        balanceOf[_from] = balanceOf[_from].sub(_value);
+        balanceOf[_to] = balanceOf[_to].add(_value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
             emit Transfer(originalTo, _to, _value);
@@ -786,8 +773,8 @@ contract CompliantDepositTokenWithHook is CompliantToken {
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = registry.requireCanTransfer(_from, _to);
-        balances.subBalance(_from, _value);
-        balances.addBalance(_to, _value);
+        balanceOf[_from] = balanceOf[_from].sub(_value);
+        balanceOf[_to] = balanceOf[_to].add(_value);
         emit Transfer(_from, originalTo, _value);
         if (originalTo != _to) {
             emit Transfer(originalTo, _to, _value);
@@ -812,7 +799,7 @@ contract CompliantDepositTokenWithHook is CompliantToken {
         if (_to != originalTo) {
             emit Transfer(originalTo, _to, _value);
         }
-        balances.addBalance(_to, _value);
+        balanceOf[_to] = balanceOf[_to].add(_value);
         if (hasHook) {
             if (_to != originalTo) {
                 TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
@@ -956,7 +943,7 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
     }
 
     function delegateBalanceOf(address who) public view returns (uint256) {
-        return balanceOf(who);
+        return balanceOf[who];
     }
 
     function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
@@ -965,7 +952,7 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
     }
 
     function delegateAllowance(address owner, address spender) public view returns (uint256) {
-        return allowance(owner, spender);
+        return allowance[owner][spender];
     }
 
     function delegateTransferFrom(address from, address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {
