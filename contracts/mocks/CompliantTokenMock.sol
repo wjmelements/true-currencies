@@ -6,7 +6,7 @@ contract CompliantTokenMock is CompliantDepositTokenWithHook {
     constructor(address initialAccount, uint256 initialBalance) public {
         balances = new BalanceSheet();
         allowances = new AllowanceSheet();
-        balances.setBalance(initialAccount, initialBalance);
+        balanceOf[initialAccount] = initialBalance;
         totalSupply_ = initialBalance;
     }
 }

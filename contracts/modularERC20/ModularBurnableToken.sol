@@ -22,7 +22,7 @@ contract ModularBurnableToken is ModularStandardToken {
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
         /* uint burnAmount = _value / (10 **16) * (10 **16); */
-        balances.subBalance(_burner, _value);
+        balanceOf[_burner] = balanceOf[_burner].sub(_value);
         totalSupply_ = totalSupply_.sub(_value);
         emit Burn(_burner, _value);
         emit Transfer(_burner, address(0), _value);
