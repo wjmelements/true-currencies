@@ -44,11 +44,11 @@ contract ProxyStorage {
      ** length     input                              usage
      *************************************************************************
      ** 19         "trueXXX.proxy.owner"              Proxy Owner
-     ** 20         address                            balanceOf
+     ** 21         uint8(0),address                   balanceOf
      ** 27         "trueXXX.pending.proxy.owner"      Pending Proxy Owner
      ** 28         "trueXXX.proxy.implementation"     Proxy Implementation
      ** 32         uint256(11)                        gasRefundPool_Deprecated
-     ** 40         address,address                    allowance
-     ** 52         address,bytes32                    Registry attributes
+     ** 42         uint16(0),address,address          allowance
+     ** 55         uint24(0),address,bytes32          Registry attributes
     **/
 }
