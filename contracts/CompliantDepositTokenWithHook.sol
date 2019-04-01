@@ -199,13 +199,16 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     modifier onlyRegistry {
-      require(msg.sender == address(registry));
-      _;
+        require(msg.sender == address(registry));
+        _;
     }
 
     function syncAttributeValue(address _who, bytes32 _attribute, uint256 _value) public onlyRegistry {
-        bytes32 storageLocation = keccak256(_who, _attribute);
         assembly {
+            let begin := mload(0x40)
+            mstore(begin, _who)
+            mstore(add(begin,32), _attribute)
+            let storageLocation := keccak256(add(begin, 9), 55)
             sstore(storageLocation, _value)
         }
     }
@@ -226,34 +229,41 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     }
 
     function _isBlacklisted(address _account) internal view returns (bool blacklisted) {
-        bytes32 storageLocation = keccak256(_account, IS_BLACKLISTED);
         assembly {
+            let begin := mload(0x40)
+            mstore(begin, _account)
+            mstore(add(begin,32), 0x6973426c61636b6c697374656400000000000000000000000000000000000000) // IS_BLACKLISTED
+            let storageLocation := keccak256(add(begin, 9), 55)
             blacklisted := sload(storageLocation)
         }
     }
 
     function _requireCanTransfer(address _from, address _to) internal view returns (address, bool) {
-        uint256 depositAddressValue;
-        bytes32 storageLocation = keccak256(address(uint256(_to) >> 20),IS_DEPOSIT_ADDRESS);
-        assembly {
-            depositAddressValue := sload(storageLocation)
-        }
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
-        }
         uint256 flag;
-        storageLocation = keccak256(_to, IS_BLACKLISTED);
         assembly {
-            flag := sload(storageLocation)
-        }
-        require (flag == 0, "blacklisted");
-        storageLocation = keccak256(_from, IS_BLACKLISTED);
-        assembly {
-            flag := sload(storageLocation)
-        }
-        require (flag == 0, "blacklisted");
-        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
-        assembly {
+            let begin := mload(0x40)
+            mstore(begin, shr(_to, 20))
+            let attributeStart := add(begin, 32)
+            mstore(attributeStart, 0x69734465706f7369744164647265737300000000000000000000000000000000) // DEPOSIT_ADDRESS
+            let keccakStart := add(begin, 9)
+            let storageLocation := keccak256(keccakStart, 55)
+            let depositAddressValue := sload(storageLocation)
+            if depositAddressValue {
+                _to := depositAddressValue
+            }
+            mstore(begin, _to)
+            mstore(attributeStart, 0x6973426c61636b6c697374656400000000000000000000000000000000000000) // IS_BLACKLISTED
+            storageLocation := keccak256(keccakStart, 55)
+            if sload(storageLocation) {
+                revert(add(attributeStart,2), 11) // "Blacklisted"
+            }
+            mstore(begin, _from)
+            storageLocation := keccak256(keccakStart, 55)
+            if sload(storageLocation) {
+                revert(add(attributeStart,2), 11) // "Blacklisted"
+            }
+            mstore(attributeStart, 0x697352656769737465726564436f6e7472616374000000000000000000000000) // IS_REGISTERED_CONTRACT
+            storageLocation := keccak256(keccakStart, 55)
             flag := sload(storageLocation)
         }
         return (_to, flag != 0);
@@ -261,30 +271,35 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _requireCanTransferFrom(address _sender, address _from, address _to) internal view returns (address, bool) {
         uint256 flag;
-        bytes32 storageLocation = keccak256(_sender, IS_BLACKLISTED);
         assembly {
-            flag := sload(storageLocation)
-        }
-        require (flag == 0, "blacklisted");
-        storageLocation = keccak256(address(uint256(_to) >> 20),IS_DEPOSIT_ADDRESS);
-        assembly {
-            flag := sload(storageLocation)
-        }
-        if (flag != 0) {
-            _to = address(flag);
-        }
-        storageLocation = keccak256(_to, IS_BLACKLISTED);
-        assembly {
-            flag := sload(storageLocation)
-        }
-        require (flag == 0, "blacklisted");
-        storageLocation = keccak256(_from, IS_BLACKLISTED);
-        assembly {
-            flag := sload(storageLocation)
-        }
-        require (flag == 0, "blacklisted");
-        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
-        assembly {
+            let begin := mload(0x40)
+            mstore(begin, shr(_to, 20))
+            let attributeStart := add(begin, 32)
+            mstore(attributeStart, 0x69734465706f7369744164647265737300000000000000000000000000000000) // DEPOSIT_ADDRESS
+            let keccakStart := add(begin, 9)
+            let storageLocation := keccak256(keccakStart, 55)
+            let depositAddressValue := sload(storageLocation)
+            if depositAddressValue {
+                _to := depositAddressValue
+            }
+            mstore(begin, _to)
+            mstore(attributeStart, 0x6973426c61636b6c697374656400000000000000000000000000000000000000) // IS_BLACKLISTED
+            storageLocation := keccak256(keccakStart, 55)
+            if sload(storageLocation) {
+                revert(add(attributeStart,2), 11) // "Blacklisted"
+            }
+            mstore(begin, caller)
+            storageLocation := keccak256(keccakStart, 55)
+            if sload(storageLocation) {
+                revert(add(attributeStart,2), 11) // "Blacklisted"
+            }
+            mstore(begin, _from)
+            storageLocation := keccak256(keccakStart, 55)
+            if sload(storageLocation) {
+                revert(add(attributeStart,2), 11) // "Blacklisted"
+            }
+            mstore(attributeStart, 0x697352656769737465726564436f6e7472616374000000000000000000000000) // IS_REGISTERED_CONTRACT
+            storageLocation := keccak256(keccakStart, 55)
             flag := sload(storageLocation)
         }
         return (_to, flag != 0);
@@ -292,43 +307,58 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
 
     function _requireCanMint(address _to) internal view returns (address, bool) {
         uint256 flag;
-        bytes32 storageLocation = keccak256(_to, IS_BLACKLISTED);
         assembly {
-            flag := sload(storageLocation)
-        }
-        require (flag == 0, "blacklisted");
-        storageLocation = keccak256(address(uint256(_to) >> 20), IS_DEPOSIT_ADDRESS);
-        assembly {
-            flag := sload(storageLocation)
-        }
-        if (flag != 0) {
-            _to = address(flag);
-        }
-        storageLocation = keccak256(_to, IS_REGISTERED_CONTRACT);
-        assembly {
+            let begin := mload(0x40)
+            mstore(begin, shr(_to, 20))
+            let attributeStart := add(begin, 32)
+            mstore(attributeStart, 0x69734465706f7369744164647265737300000000000000000000000000000000) // DEPOSIT_ADDRESS
+            let keccakStart := add(begin, 9)
+            let storageLocation := keccak256(keccakStart, 55)
+            let depositAddressValue := sload(storageLocation)
+            if depositAddressValue {
+                _to := depositAddressValue
+            }
+            mstore(begin, _to)
+            mstore(attributeStart, 0x6973426c61636b6c697374656400000000000000000000000000000000000000) // IS_BLACKLISTED
+            storageLocation := keccak256(keccakStart, 55)
+            if sload(storageLocation) {
+                revert(add(begin, 34), 11) // "Blacklisted"
+            }
+            mstore(attributeStart, 0x697352656769737465726564436f6e7472616374000000000000000000000000) // IS_REGISTERED_CONTRACT
+            storageLocation := keccak256(keccakStart, 55)
             flag := sload(storageLocation)
         }
         return (_to, flag != 0);
     }
 
     function _requireOnlyCanBurn(address _from) internal view {
-        bytes32 storageLocation = keccak256(_from, canBurn());
+        bytes32 burnFlag = canBurn();
         uint256 flag;
         assembly {
+            let begin := mload(0x40)
+            mstore(begin, _from)
+            mstore(add(begin,32), burnFlag)
+            let storageLocation := keccak256(add(begin, 9), 55)
             flag := sload(storageLocation)
         }
         require (flag != 0, "cannot burn from this address");
     }
 
     function _requireCanBurn(address _from) internal view {
+        bytes32 burnAttribute = canBurn();
         uint256 flag;
-        bytes32 storageLocation = keccak256(_from, IS_BLACKLISTED);
         assembly {
-            flag := sload(storageLocation)
-        }
-        require (flag == 0, "blacklisted");
-        storageLocation = keccak256(_from, canBurn());
-        assembly {
+            let begin := mload(0x40)
+            mstore(begin, _from)
+            let attributeStart := add(begin, 32)
+            mstore(attributeStart, 0x6973426c61636b6c697374656400000000000000000000000000000000000000) // IS_BLACKLISTED
+            let keccakStart := add(9, begin)
+            let storageLocation := keccak256(keccakStart, 55)
+            if sload(storageLocation) {
+                revert(add(begin, 34), 11) // "Blacklisted"
+            }
+            mstore(attributeStart, burnAttribute)
+            storageLocation := keccak256(keccakStart, 55)
             flag := sload(storageLocation)
         }
         require (flag != 0, "cannot burn from this address");
