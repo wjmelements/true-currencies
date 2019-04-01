@@ -242,7 +242,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         uint256 flag;
         assembly {
             let begin := mload(0x40)
-            mstore(begin, shr(_to, 20))
+            mstore(begin, div(_to, 0x100000))
             let attributeStart := add(begin, 32)
             mstore(attributeStart, 0x69734465706f7369744164647265737300000000000000000000000000000000) // DEPOSIT_ADDRESS
             let keccakStart := add(begin, 9)
@@ -273,7 +273,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         uint256 flag;
         assembly {
             let begin := mload(0x40)
-            mstore(begin, shr(_to, 20))
+            mstore(begin, div(_to, 0x100000))
             let attributeStart := add(begin, 32)
             mstore(attributeStart, 0x69734465706f7369744164647265737300000000000000000000000000000000) // DEPOSIT_ADDRESS
             let keccakStart := add(begin, 9)
@@ -309,7 +309,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         uint256 flag;
         assembly {
             let begin := mload(0x40)
-            mstore(begin, shr(_to, 20))
+            mstore(begin, div(_to, 0x100000))
             let attributeStart := add(begin, 32)
             mstore(attributeStart, 0x69734465706f7369744164647265737300000000000000000000000000000000) // DEPOSIT_ADDRESS
             let keccakStart := add(begin, 9)
