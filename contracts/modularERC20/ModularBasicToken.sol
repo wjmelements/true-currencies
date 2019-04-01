@@ -24,14 +24,20 @@ contract ModularBasicToken is HasOwner {
         return _getBalance(_who);
     }
     function _getBalance(address _who) internal view returns (uint256 outBalance) {
-        bytes32 storageLocation = keccak256(_who);
+        bytes32 storageLocation;
         assembly {
+            let begin := mload(0x40)
+            mstore(begin, _who)
+            storageLocation := keccak256(add(begin,11), 21)
             outBalance := sload(storageLocation)
         }
     }
     function _addBalance(address _who, uint256 _value) internal returns (uint256 priorBalance) {
-        bytes32 storageLocation = keccak256(_who);
+        bytes32 storageLocation;
         assembly {
+            let begin := mload(0x40)
+            mstore(begin, _who)
+            storageLocation := keccak256(add(begin,11), 21)
             priorBalance := sload(storageLocation)
         }
         uint256 result = priorBalance.add(_value);
@@ -40,9 +46,12 @@ contract ModularBasicToken is HasOwner {
         }
     }
     function _subBalance(address _who, uint256 _value) internal returns (uint256 result) {
-        bytes32 storageLocation = keccak256(_who);
         uint256 priorBalance;
+        bytes32 storageLocation;
         assembly {
+            let begin := mload(0x40)
+            mstore(begin, _who)
+            storageLocation := keccak256(add(begin,11), 21)
             priorBalance := sload(storageLocation)
         }
         result = priorBalance.sub(_value);
@@ -51,8 +60,11 @@ contract ModularBasicToken is HasOwner {
         }
     }
     function _setBalance(address _who, uint256 _value) internal {
-        bytes32 storageLocation = keccak256(_who);
+        bytes32 storageLocation;
         assembly {
+            let begin := mload(0x40)
+            mstore(begin, _who)
+            storageLocation := keccak256(add(begin,11), 21)
             sstore(storageLocation, _value)
         }
     }
