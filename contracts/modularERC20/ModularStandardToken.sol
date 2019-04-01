@@ -87,15 +87,23 @@ contract ModularStandardToken is ModularBasicToken {
     }
 
     function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
-        bytes32 storageLocation = keccak256(_who, _spender);
+        bytes32 storageLocation;
         assembly {
+            let begin := mload(0x40)
+            mstore(add(begin, 20), _spender)
+            mstore(begin, _who)
+            storageLocation := keccak256(add(begin,10), 42)
             value := sload(storageLocation)
         }
     }
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
-        bytes32 storageLocation = keccak256(_who, _spender);
+        bytes32 storageLocation;
         uint256 value;
         assembly {
+            let begin := mload(0x40)
+            mstore(add(begin, 20), _spender)
+            mstore(begin, _who)
+            storageLocation := keccak256(add(begin,10), 42)
             value := sload(storageLocation)
         }
         value = value.add(_value);
@@ -104,9 +112,13 @@ contract ModularStandardToken is ModularBasicToken {
         }
     }
     function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero){
-        bytes32 storageLocation = keccak256(_who, _spender);
+        bytes32 storageLocation;
         uint256 value;
         assembly {
+            let begin := mload(0x40)
+            mstore(add(begin, 20), _spender)
+            mstore(begin, _who)
+            storageLocation := keccak256(add(begin,10), 42)
             value := sload(storageLocation)
         }
         value = value.sub(_value);
@@ -116,8 +128,12 @@ contract ModularStandardToken is ModularBasicToken {
         allowanceZero = value == 0;
     }
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
-        bytes32 storageLocation = keccak256(_who, _spender);
+        bytes32 storageLocation;
         assembly {
+            let begin := mload(0x40)
+            mstore(add(begin, 20), _spender)
+            mstore(begin, _who)
+            storageLocation := keccak256(add(begin,10), 42)
             sstore(storageLocation, _value)
         }
     }
