@@ -6,6 +6,12 @@ var HDWalletProvider = require("truffle-hdwallet-provider");
 module.exports = {
   solc: {
     version: "0.4.23",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 20000
+      }
+    }
     optimizer: {
       enabled: true,
       runs: 20000
@@ -14,6 +20,12 @@ module.exports = {
   compilers: {
     solc: {
       version: "0.4.23",
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 20000
+        }
+      }
       optimizer: {
         enabled: true,
         runs: 20000
