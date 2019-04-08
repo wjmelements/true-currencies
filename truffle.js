@@ -11,7 +11,7 @@ module.exports = {
         enabled: true,
         runs: 20000
       }
-    }
+    },
     optimizer: {
       enabled: true,
       runs: 20000
@@ -25,7 +25,7 @@ module.exports = {
           enabled: true,
           runs: 20000
         }
-      }
+      },
       optimizer: {
         enabled: true,
         runs: 20000
