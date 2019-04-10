@@ -94,20 +94,14 @@ contract PausedToken is HasOwner, RegistryClone {
         minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
     }
 
-    function balanceOf(address _who) public view returns (uint256) {
-        return _getBalance(_who);
-    }
     function _getBalance(address _who) internal view returns (uint256 value) {
-        return _balanceOf[_who];
+        return balanceOf[_who];
     }
     function _setBalance(address _who, uint256 _value) internal {
-        _balanceOf[_who] = _value;
-    }
-    function allowance(address _who, address _spender) public view returns (uint256) {
-        return _getAllowance(_who, _spender);
+        balanceOf[_who] = _value;
     }
     function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
-        return _allowance[_who][_spender];
+        return allowance[_who][_spender];
     }
     function transfer(address /*_to*/, uint256 /*_value*/) public returns (bool) {
         revert("Token Paused");
@@ -182,7 +176,7 @@ contract PausedDelegateERC20 is PausedToken {
     }
 
     function delegateBalanceOf(address who) public view returns (uint256) {
-        return balanceOf(who);
+        return balanceOf[who];
     }
 
     function delegateTransfer(address /*to*/, uint256 /*value*/, address /*origSender*/) public onlyDelegateFrom returns (bool) {

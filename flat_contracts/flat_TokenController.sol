@@ -395,8 +395,8 @@ contract ProxyStorage {
     uint256 private redemptionAddressCount_Deprecated;
     uint256 public minimumGasPriceForFutureRefunds;
 
-    mapping (address => uint256) _balanceOf;
-    mapping (address => mapping (address => uint256)) _allowance;
+    mapping (address => uint256) public balanceOf;
+    mapping (address => mapping (address => uint256)) public allowance;
     mapping (bytes32 => mapping (address => uint256)) attributes;
 
 
@@ -530,26 +530,22 @@ contract ModularBasicToken is HasOwner {
         return totalSupply_;
     }
 
-    function balanceOf(address _who) public view returns (uint256) {
-        return _getBalance(_who);
-    }
-
     function _getBalance(address _who) internal view returns (uint256) {
-        return _balanceOf[_who];
+        return balanceOf[_who];
     }
 
     function _addBalance(address _who, uint256 _value) internal returns (uint256 priorBalance) {
-        priorBalance = _balanceOf[_who];
-        _balanceOf[_who] = priorBalance.add(_value);
+        priorBalance = balanceOf[_who];
+        balanceOf[_who] = priorBalance.add(_value);
     }
 
     function _subBalance(address _who, uint256 _value) internal returns (uint256 result) {
-        result = _balanceOf[_who].sub(_value);
-        _balanceOf[_who] = result;
+        result = balanceOf[_who].sub(_value);
+        balanceOf[_who] = result;
     }
 
     function _setBalance(address _who, uint256 _value) internal {
-        _balanceOf[_who] = _value;
+        balanceOf[_who] = _value;
     }
 }
 
@@ -634,26 +630,21 @@ contract ModularStandardToken is ModularBasicToken {
         emit Approval(_tokenHolder,_spender, newValue);
     }
 
-    function allowance(address _who, address _spender) public view returns (uint256) {
-        return _getAllowance(_who, _spender);
-    }
-
     function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
-        return _allowance[_who][_spender];
+        return allowance[_who][_spender];
     }
 
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
-        _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
+        allowance[_who][_spender] = allowance[_who][_spender].add(_value);
     }
 
-    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero){
-        uint256 newAllowance = _allowance[_who][_spender].sub(_value);
-        _allowance[_who][_spender] = newAllowance;
-        allowanceZero = newAllowance == 0;
+    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256 newAllowance){
+        newAllowance = allowance[_who][_spender].sub(_value);
+        allowance[_who][_spender] = newAllowance;
     }
 
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
-        _allowance[_who][_spender] = _value;
+        allowance[_who][_spender] = _value;
     }
 }
 
@@ -928,13 +919,13 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
         if (0 == _subBalance(_from, _value)) {
-            if (_subAllowance(_from, msg.sender, _value)) {
+            if (0 == _subAllowance(_from, msg.sender, _value)) {
                 // no refund
             } else {
                 gasRefund15();
             }
         } else {
-            if (_subAllowance(_from, msg.sender, _value)) {
+            if (0 == _subAllowance(_from, msg.sender, _value)) {
                 gasRefund15();
             } else {
                 gasRefund39();
@@ -967,7 +958,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
         if (0 == _addBalance(_to, _value)) {
-            if (_subAllowance(_from, _spender, _value)) {
+            if (0 == _subAllowance(_from, _spender, _value)) {
                 if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {
@@ -981,7 +972,7 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
                 }
             }
         } else {
-            if (_subAllowance(_from, _spender, _value)) {
+            if (0 == _subAllowance(_from, _spender, _value)) {
                 if (0 == _subBalance(_from, _value)) {
                     // do not refund
                 } else {

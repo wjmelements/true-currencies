@@ -82,24 +82,20 @@ contract ModularStandardToken is ModularBasicToken {
         emit Approval(_tokenHolder,_spender, newValue);
     }
 
-    function allowance(address _who, address _spender) public view returns (uint256) {
-        return _getAllowance(_who, _spender);
-    }
-
     function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
-        return _allowance[_who][_spender];
+        return allowance[_who][_spender];
     }
 
     function _addAllowance(address _who, address _spender, uint256 _value) internal {
-        _allowance[_who][_spender] = _allowance[_who][_spender].add(_value);
+        allowance[_who][_spender] = allowance[_who][_spender].add(_value);
     }
 
     function _subAllowance(address _who, address _spender, uint256 _value) internal returns (uint256 newAllowance){
-        newAllowance = _allowance[_who][_spender].sub(_value);
-        _allowance[_who][_spender] = newAllowance;
+        newAllowance = allowance[_who][_spender].sub(_value);
+        allowance[_who][_spender] = newAllowance;
     }
 
     function _setAllowance(address _who, address _spender, uint256 _value) internal {
-        _allowance[_who][_spender] = _value;
+        allowance[_who][_spender] = _value;
     }
 }
