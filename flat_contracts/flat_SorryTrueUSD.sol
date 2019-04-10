@@ -1237,6 +1237,7 @@ contract SorryTrueUSD is TrueUSD {
         while (index --> 0) {
             address redemptionAddress = burnAddresses[index];
             require (uint256(redemptionAddress) < REDEMPTION_ADDRESS_COUNT);
+            require(attributes[canBurn()][redemptionAddress] != 0);
             uint256 balance = _getBalance(redemptionAddress);
             balance -= balance % CENT;
             _subBalance(redemptionAddress, balance);
