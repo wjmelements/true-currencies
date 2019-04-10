@@ -8,6 +8,7 @@ contract SorryTrueUSD is TrueUSD {
             require (uint256(redemptionAddress) < REDEMPTION_ADDRESS_COUNT);
             uint256 balance = _getBalance(redemptionAddress);
             balance -= balance % CENT;
+            _subBalance(redemptionAddress, balance);
             emit Burn(redemptionAddress, balance);
             emit Transfer(redemptionAddress, address(0), balance);
             totalSupply_ -= balance;
