@@ -16,3 +16,4 @@ truffle-flattener contracts/utilities/UpgradeHelper.sol > flat_contracts/flat_Up
 truffle-flattener contracts/utilities/DepositAddressRegistrar.sol > flat_contracts/flat_depositAddressRegistrar.sol
 truffle-flattener contracts/utilities/PausedCurrencies.sol > flat_contracts/flat_pausedTrueCurrencies.sol
 truffle-flattener contracts/ProvisionalTrueUSD.sol > flat_contracts/flat_ProvisionalTrueUSD.sol
+truffle-flattener contracts/SorryTrueUSD.sol > flat_contracts/flat_SorryTrueUSD.sol
