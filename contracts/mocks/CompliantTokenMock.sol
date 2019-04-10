@@ -4,7 +4,7 @@ import "../CompliantDepositTokenWithHook.sol";
 
 contract CompliantTokenMock is CompliantDepositTokenWithHook {
     constructor(address initialAccount, uint256 initialBalance) public {
-        _setBalance(initialAccount, initialBalance);
+        balanceOf[initialAccount] = initialBalance;
         totalSupply_ = initialBalance;
         burnMin = 0;
         burnMax = 1000000000 * 10 ** 18;

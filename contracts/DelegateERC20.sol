@@ -20,7 +20,7 @@ contract DelegateERC20 is CompliantDepositTokenWithHook {
     }
 
     function delegateBalanceOf(address who) public view returns (uint256) {
-        return _getBalance(who);
+        return balanceOf[who];
     }
 
     function delegateTransfer(address to, uint256 value, address origSender) public onlyDelegateFrom returns (bool) {

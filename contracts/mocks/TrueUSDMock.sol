@@ -4,7 +4,7 @@ import "../TrueUSD.sol";
 
 contract TrueUSDMock is TrueUSD {
     constructor(address initialAccount, uint256 initialBalance) public {
-        _setBalance(initialAccount, initialBalance);
+        balanceOf[initialAccount] = initialBalance;
         totalSupply_ = initialBalance;
         initialize();
     }

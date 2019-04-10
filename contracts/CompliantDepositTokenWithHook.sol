@@ -53,7 +53,9 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         _requireOnlyCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        if (0 == _subBalance(_from, _value)) {
+        uint256 subtractedBalance = balanceOf[_from].sub(_value);
+        balanceOf[_from] = subtractedBalance;
+        if (0 == subtractedBalance) {
             if (0 == _subAllowance(_from, msg.sender, _value)) {
                 // no refund
             } else {
@@ -77,7 +79,9 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         _requireOnlyCanBurn(_to);
         require(_value >= burnMin, "below min burn bound");
         require(_value <= burnMax, "exceeds max burn bound");
-        if (0 == _subBalance(_from, _value)) {
+        uint256 subtractedBalance = balanceOf[_from].sub(_value);
+        balanceOf[_from] = subtractedBalance;
+        if (0 == subtractedBalance) {
             gasRefund15();
         } else {
             gasRefund30();
@@ -92,15 +96,19 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address originalTo = _to;
         (_to, hasHook) = _requireCanTransferFrom(_spender, _from, _to);
-        if (0 == _addBalance(_to, _value)) {
+        uint256 priorBalance = balanceOf[_to];
+        balanceOf[_to] = priorBalance.add(_value);
+        uint256 subtractedBalance = balanceOf[_from].sub(_value);
+        balanceOf[_from] = subtractedBalance;
+        if (0 == priorBalance) {
             if (0 == _subAllowance(_from, _spender, _value)) {
-                if (0 == _subBalance(_from, _value)) {
+                if (0 == subtractedBalance) {
                     // do not refund
                 } else {
                     gasRefund30();
                 }
             } else {
-                if (0 == _subBalance(_from, _value)) {
+                if (0 == subtractedBalance) {
                     gasRefund30();
                 } else {
                     gasRefund39();
@@ -108,13 +116,13 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
             }
         } else {
             if (0 == _subAllowance(_from, _spender, _value)) {
-                if (0 == _subBalance(_from, _value)) {
+                if (0 == subtractedBalance) {
                     // do not refund
                 } else {
                     gasRefund15();
                 }
             } else {
-                if (0 == _subBalance(_from, _value)) {
+                if (0 == subtractedBalance) {
                     gasRefund15();
                 } else {
                     gasRefund39();
@@ -139,14 +147,18 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         bool hasHook;
         address finalTo;
         (finalTo, hasHook) = _requireCanTransfer(_from, _to);
-        if (0 == _subBalance(_from, _value)) {
-            if (0 == _addBalance(finalTo, _value)) {
+        uint256 priorBalance = balanceOf[finalTo];
+        balanceOf[finalTo] = priorBalance.add(_value);
+        uint256 subtractedBalance = balanceOf[_from].sub(_value);
+        balanceOf[_from] = subtractedBalance;
+        if (0 == subtractedBalance) {
+            if (0 == priorBalance) {
                 gasRefund30();
             } else {
                 // do not refund
             }
         } else {
-            if (0 == _addBalance(finalTo, _value)) {
+            if (0 == priorBalance) {
                 gasRefund39();
             } else {
                 gasRefund30();
@@ -176,7 +188,8 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
         if (_to != originalTo) {
             emit Transfer(originalTo, _to, _value);
         }
-        _addBalance(_to, _value);
+        uint256 priorBalance = balanceOf[_to];
+        balanceOf[_to] = priorBalance.add(_value);
         if (hasHook) {
             if (_to != originalTo) {
                 TrueCoinReceiver(_to).tokenFallback(originalTo, _value);
@@ -215,8 +228,8 @@ contract CompliantDepositTokenWithHook is ReclaimerToken, RegistryClone, Burnabl
     // Destroy the tokens owned by a blacklisted account
     function wipeBlacklistedAccount(address _account) public onlyOwner {
         require(_isBlacklisted(_account), "_account is not blacklisted");
-        uint256 oldValue = _getBalance(_account);
-        _setBalance(_account, 0);
+        uint256 oldValue = balanceOf[_account];
+        balanceOf[_account] = 0;
         totalSupply_ = totalSupply_.sub(oldValue);
         emit WipeBlacklistedAccount(_account, oldValue);
         emit Transfer(_account, address(0), oldValue);

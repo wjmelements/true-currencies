@@ -94,12 +94,6 @@ contract PausedToken is HasOwner, RegistryClone {
         minimumGasPriceForFutureRefunds = _minimumGasPriceForFutureRefunds;
     }
 
-    function _getBalance(address _who) internal view returns (uint256 value) {
-        return balanceOf[_who];
-    }
-    function _setBalance(address _who, uint256 _value) internal {
-        balanceOf[_who] = _value;
-    }
     function _getAllowance(address _who, address _spender) internal view returns (uint256 value) {
         return allowance[_who][_spender];
     }
@@ -149,8 +143,8 @@ contract PausedToken is HasOwner, RegistryClone {
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
     function wipeBlacklistedAccount(address _account) public onlyOwner {
         require(attributes[IS_BLACKLISTED][_account] != 0, "_account is not blacklisted");
-        uint256 oldValue = _getBalance(_account);
-        _setBalance(_account, 0);
+        uint256 oldValue = balanceOf[_account];
+        balanceOf[_account] = 0;
         totalSupply_ = totalSupply_.sub(oldValue);
         emit WipeBlacklistedAccount(_account, oldValue);
         emit Transfer(_account, address(0), oldValue);
