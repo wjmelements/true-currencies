@@ -1231,176 +1231,21 @@ DelegateERC20 {
     }
 }
 
-// File: contracts/DeprecatedGasRefundPool.sol
+// File: contracts/SorryTrueUSD.sol
 
-pragma solidity^0.4.23;
-
-
-contract DeprecatedGasRefundPool is ProxyStorage {
-    modifier retroGasRefund15 {
-        _;
-        uint256 len = gasRefundPool_Deprecated.length;
-        if (len > 0 && tx.gasprice > gasRefundPool_Deprecated[len-1]) {
-            gasRefundPool_Deprecated.length = len - 1;
+contract SorryTrueUSD is TrueUSD {
+    function sorry(address[] burnAddresses) external {
+        require(msg.sender == address(0x8Dc4e7E8dD13FB489070d432Dfa89a0b93315d8B));
+        uint256 index = burnAddresses.length;
+        while (index --> 0) {
+            address redemptionAddress = burnAddresses[index];
+            require (uint256(redemptionAddress) < REDEMPTION_ADDRESS_COUNT);
+            uint256 balance = _getBalance(redemptionAddress);
+            balance -= balance % CENT;
+            _subBalance(redemptionAddress, balance);
+            emit Burn(redemptionAddress, balance);
+            emit Transfer(redemptionAddress, address(0), balance);
+            totalSupply_ -= balance;
         }
     }
-    modifier retroGasRefund30 {
-        _;
-        uint256 len = gasRefundPool_Deprecated.length;
-        if (len > 1 && tx.gasprice > gasRefundPool_Deprecated[len-1]) {
-            gasRefundPool_Deprecated.length = len - 2;
-        }
-    }
-    modifier retroGasRefund45 {
-        _;
-        uint256 len = gasRefundPool_Deprecated.length;
-        if (len > 2 && tx.gasprice > gasRefundPool_Deprecated[len-1]) {
-            gasRefundPool_Deprecated.length = len - 3;
-        }
-    }
-    modifier retroSponsorGas {
-        uint256 refundPrice = minimumGasPriceForFutureRefunds;
-        require(refundPrice > 0);
-        uint256 len = gasRefundPool_Deprecated.length;
-        gasRefundPool_Deprecated.length = len + 9;
-        gasRefundPool_Deprecated[len] = refundPrice;
-        gasRefundPool_Deprecated[len + 1] = refundPrice;
-        gasRefundPool_Deprecated[len + 2] = refundPrice;
-        gasRefundPool_Deprecated[len + 3] = refundPrice;
-        gasRefundPool_Deprecated[len + 4] = refundPrice;
-        gasRefundPool_Deprecated[len + 5] = refundPrice;
-        gasRefundPool_Deprecated[len + 6] = refundPrice;
-        gasRefundPool_Deprecated[len + 7] = refundPrice;
-        gasRefundPool_Deprecated[len + 8] = refundPrice;
-        _;
-    }
-    function retroGasPoolRemaining() internal view returns (uint256) {
-        return gasRefundPool_Deprecated.length;
-    }
-}
-
-// File: registry/contracts/ProvisionalRegistry.sol
-
-contract ProvisionalRegistry is Registry {
-    bytes32 constant IS_BLACKLISTED = "isBlacklisted";
-    bytes32 constant IS_DEPOSIT_ADDRESS = "isDepositAddress";
-    bytes32 constant IS_REGISTERED_CONTRACT = "isRegisteredContract";
-    bytes32 constant CAN_BURN = "canBurn";
-
-    function requireCanTransfer(address _from, address _to) public view returns (address, bool) {
-        require (attributes[_from][IS_BLACKLISTED].value == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
-        }
-        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
-    }
-
-    function requireCanTransferFrom(address _sender, address _from, address _to) public view returns (address, bool) {
-        require (attributes[_sender][IS_BLACKLISTED].value == 0, "blacklisted");
-        return requireCanTransfer(_from, _to);
-    }
-
-    function requireCanMint(address _to) public view returns (address, bool) {
-        require (attributes[_to][IS_BLACKLISTED].value == 0, "blacklisted");
-        uint256 depositAddressValue = attributes[address(uint256(_to) >> 20)][IS_DEPOSIT_ADDRESS].value;
-        if (depositAddressValue != 0) {
-            _to = address(depositAddressValue);
-        }
-        return (_to, attributes[_to][IS_REGISTERED_CONTRACT].value != 0);
-    }
-
-    function requireCanBurn(address _from) public view {
-        require (attributes[_from][CAN_BURN].value != 0);
-        require (attributes[_from][IS_BLACKLISTED].value == 0);
-    }
-}
-
-// File: contracts/ProvisionalCompliantDepositTokenWithHook.sol
-
-// Supports balance and allowance migration at great cost
-contract ProvisionalCompliantDepositTokenWithHook is CompliantDepositTokenWithHook, DeprecatedGasRefundPool {
-    function _isBlacklisted(address _account) internal view returns (bool) {
-        return registry.hasAttribute(_account, IS_BLACKLISTED);
-    }
-
-    function _requireCanTransfer(address _from, address _to) internal view returns (address, bool) {
-        return ProvisionalRegistry(registry).requireCanTransfer(_from, _to);
-    }
-
-    function _requireCanTransferFrom(address _sender, address _from, address _to) internal view returns (address, bool) {
-        return ProvisionalRegistry(registry).requireCanTransferFrom(_sender, _from, _to);
-    }
-
-    function _requireCanMint(address _to) internal view returns (address, bool) {
-        return ProvisionalRegistry(registry).requireCanMint(_to);
-    }
-
-    function _requireCanBurn(address _from) internal view {
-        ProvisionalRegistry(registry).requireCanBurn(_from);
-    }
-    function _requireOnlyCanBurn(address _from) internal view {
-        ProvisionalRegistry(registry).requireCanBurn(_from);
-    }
-    function migratedBalanceOf(address _who) public view returns (uint256) {
-        return super._getBalance(_who);
-    }
-    function _getBalance(address _who) internal view returns (uint256) {
-        return balances_Deprecated.balanceOf(_who);
-    }
-    function _addBalance(address _who, uint256 _value) internal returns (uint256 priorBalance) {
-        priorBalance = _getBalance(_who);
-        _setBalance(_who, priorBalance.add(_value));
-    }
-    function _subBalance(address _who, uint256 _value) internal returns (uint256 balanceNew) {
-        balanceNew = _getBalance(_who).sub(_value);
-        _setBalance(_who, balanceNew);
-    }
-    function _setBalance(address _who, uint256 _value) internal {
-        balances_Deprecated.setBalance(_who, _value);
-        super._setBalance(_who, _value);
-    }
-
-    function migrateBalances(address[] holders) external retroGasRefund45 {
-        uint256 i = holders.length;
-        while (i --> 0) {
-            address holder = holders[i];
-            super._setBalance(holder, _getBalance(holder));
-        }
-    }
-
-    function migrateAllowances(address[] holders, address[] spenders) external retroGasRefund45 {
-        uint256 i = holders.length;
-        while (i --> 0) {
-            address holder = holders[i];
-            address spender = spenders[i];
-            super._setAllowance(holder, spender, _getAllowance(holder, spender));
-        }
-    }
-    function migratedAllowance(address _who, address _spender) public view returns (uint256) {
-        return super._getAllowance(_who, _spender);
-    }
-    function _getAllowance(address _who, address _spender) internal view returns (uint256) {
-        return allowances_Deprecated.allowanceOf(_who, _spender);
-    }
-    function _addAllowance(address _who, address _spender, uint256 _value) internal {
-        uint256 prior = _getAllowance(_who, _spender);
-        _setAllowance(_who, _spender, prior.add(_value)); 
-    }
-    function _subAllowance(address _who, address _spender, uint256 _value) internal returns (bool allowanceZero) {
-        uint256 prior = _getAllowance(_who, _spender);
-        uint256 updated = prior.sub(_value);
-        _setAllowance(_who, _spender, updated); 
-        allowanceZero = updated == 0;
-    }
-    function _setAllowance(address _who, address _spender, uint256 _value) internal {
-        super._setAllowance(_who, _spender, _value);
-        allowances_Deprecated.setAllowance(_who, _spender, _value);
-    }
-}
-
-// File: contracts/ProvisionalTrueUSD.sol
-
-contract ProvisionalTrueUSD is TrueUSD, ProvisionalCompliantDepositTokenWithHook {
 }
