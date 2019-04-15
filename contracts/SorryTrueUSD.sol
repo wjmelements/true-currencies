@@ -1,3 +1,4 @@
+pragma solidity^0.4.23;
 import "./TrueUSD.sol";
 contract SweepTrueUSD is TrueUSD {
     function sweepRedemptions(address[] burnAddresses) external {
