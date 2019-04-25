@@ -20,8 +20,8 @@ contract OwnedUpgradeabilityProxy {
     event NewPendingOwner(address currentOwner, address pendingOwner);
     
     // Storage position of the owner and pendingOwner of the contract
-    bytes32 private constant proxyOwnerPosition = 0x136d55780fb1583e87bb6fa1fda0bbe2746553b012c9291a830fad1e95c269cc;//keccak256("trueCAD.proxy.owner");
-    bytes32 private constant pendingProxyOwnerPosition = 0xca6c24188764c50fa5c7b728d85fdd98bea1991968b9f4bd4000ae3ace49faac;//keccak256("trueCAD.pending.proxy.owner");
+    bytes32 private constant proxyOwnerPosition = 0x9afdba48695f976525206667656e0eb4a6d66671c0d3ec078f1f48d2307ed49c;//keccak256("trueAUD.proxy.owner");
+    bytes32 private constant pendingProxyOwnerPosition = 0x7b9044cf1491ee5d1e688907e48d0439248c6543a740f2f5f828fecf8367c4d1;//keccak256("trueAUD.pending.proxy.owner");
 
     /**
     * @dev the constructor sets the original owner of the contract to the sender account.
@@ -131,7 +131,7 @@ contract OwnedUpgradeabilityProxy {
     event Upgraded(address indexed implementation);
 
     // Storage position of the address of the current implementation
-    bytes32 private constant implementationPosition = 0xecfd2ee7a4295d533a08882dec6729582fc6bda7812f32b75ae1ea4807d08982; //keccak256("trueCAD.proxy.implementation");
+    bytes32 private constant implementationPosition = 0xc20777594ecafd73f44a72aa5ad2de8704211212d04473d4b208539e34ba14eb; //keccak256("trueAUD.proxy.implementation");
 
     function implementation() public view returns (address impl) {
         bytes32 position = implementationPosition;
@@ -148,7 +148,7 @@ contract OwnedUpgradeabilityProxy {
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, returndatasize, calldatasize)
-            let result := delegatecall(gas, sload(0xecfd2ee7a4295d533a08882dec6729582fc6bda7812f32b75ae1ea4807d08982), ptr, calldatasize, returndatasize, returndatasize)
+            let result := delegatecall(gas, sload(0xc20777594ecafd73f44a72aa5ad2de8704211212d04473d4b208539e34ba14eb), ptr, calldatasize, returndatasize, returndatasize)
             returndatacopy(ptr, 0, returndatasize)
 
             switch result
