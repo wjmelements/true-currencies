@@ -1164,8 +1164,8 @@ contract OwnedUpgradeabilityProxy {
     event NewPendingOwner(address currentOwner, address pendingOwner);
     
     // Storage position of the owner and pendingOwner of the contract
-    bytes32 private constant proxyOwnerPosition = 0x6279e8199720cf3557ecd8b58d667c8edc486bd1cf3ad59ea9ebdfcae0d0dfac;//keccak256("trueUSD.proxy.owner");
-    bytes32 private constant pendingProxyOwnerPosition = 0x8ddbac328deee8d986ec3a7b933a196f96986cb4ee030d86cc56431c728b83f4;//keccak256("trueUSD.pending.proxy.owner");
+    bytes32 private constant proxyOwnerPosition = 0x136d55780fb1583e87bb6fa1fda0bbe2746553b012c9291a830fad1e95c269cc;//keccak256("trueCAD.proxy.owner");
+    bytes32 private constant pendingProxyOwnerPosition = 0xca6c24188764c50fa5c7b728d85fdd98bea1991968b9f4bd4000ae3ace49faac;//keccak256("trueCAD.pending.proxy.owner");
 
     /**
     * @dev the constructor sets the original owner of the contract to the sender account.
@@ -1275,7 +1275,7 @@ contract OwnedUpgradeabilityProxy {
     event Upgraded(address indexed implementation);
 
     // Storage position of the address of the current implementation
-    bytes32 private constant implementationPosition = 0x6e41e0fbe643dfdb6043698bf865aada82dc46b953f754a3468eaa272a362dc7; //keccak256("trueUSD.proxy.implementation");
+    bytes32 private constant implementationPosition = 0xecfd2ee7a4295d533a08882dec6729582fc6bda7812f32b75ae1ea4807d08982; //keccak256("trueCAD.proxy.implementation");
 
     function implementation() public view returns (address impl) {
         bytes32 position = implementationPosition;
@@ -1289,12 +1289,10 @@ contract OwnedUpgradeabilityProxy {
     * This function will return whatever the implementation call returns
     */
     function() external payable {
-        bytes32 position = implementationPosition;
-        
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, returndatasize, calldatasize)
-            let result := delegatecall(gas, sload(position), ptr, calldatasize, returndatasize, returndatasize)
+            let result := delegatecall(gas, sload(0xecfd2ee7a4295d533a08882dec6729582fc6bda7812f32b75ae1ea4807d08982), ptr, calldatasize, returndatasize, returndatasize)
             returndatacopy(ptr, 0, returndatasize)
 
             switch result
@@ -1442,7 +1440,7 @@ contract TokenController {
 
     function initialize() external {
         require(!initialized, "already initialized");
-        owner = msg.sender;
+        owner = 0xcDbd95534b5a980f33d1acDEe4dB7cc1eB8A31De;
         initialized = true;
     }
 
